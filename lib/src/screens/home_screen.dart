@@ -10,47 +10,49 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final transactionList = <Transaction>[
-    Transaction(
-      id: DateTime.now().toString(),
-      title: 'New Shoes',
-      amount: 52.25,
-      date: DateTime.now(),
-    ),
-    Transaction(
-      id: DateTime.now().toString(),
-      title: 'Weekly Groceries',
-      amount: 20.25,
-      date: DateTime.now(),
-    ),
-    Transaction(
-      id: DateTime.now().toString(),
-      title: 'شيش',
-      amount: 40,
-      date: DateTime.now(),
-    ),
-  ];
+  final _transactionList = <Transaction>[];
+
+  List<Transaction> get _recentTransactions {
+    return _transactionList.where((ele) {
+      return ele.date.isAfter(DateTime.now().subtract(Duration(days: 7)));
+    }).toList();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final appBar = AppBar(
+      title: Text('Personal Expense'),
+      centerTitle: false,
+      actions: <Widget>[
+        IconButton(
+          icon: Icon(Icons.add),
+          onPressed: () {
+            startAddNewTransaction(context);
+          },
+        ),
+      ],
+    );
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Flutter App'),
-        centerTitle: false,
-        actions: <Widget>[
-          IconButton(
-            icon: Icon(Icons.add),
-            onPressed: () {
-              startAddNewTransaction(context);
-            },
-          ),
-        ],
-      ),
+      appBar: appBar,
       body: SingleChildScrollView(
         child: Column(
           children: <Widget>[
-            Chart(),
-            TransactionList(transactionList),
+            Container(
+                height: (MediaQuery.of(context).size.height -
+                        appBar.preferredSize.height -
+                        MediaQuery.of(context).padding.top) *
+                    0.3,
+                child: Chart(recentTransactions: _recentTransactions)),
+            Container(
+              height: (MediaQuery.of(context).size.height -
+                      appBar.preferredSize.height -
+                      MediaQuery.of(context).padding.top) *
+                  0.7,
+              child: TransactionList(
+                _transactionList,
+                onDelete: _deleteTransaction,
+              ),
+            ),
           ],
         ),
       ),
@@ -67,6 +69,12 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  void _deleteTransaction(String id) {
+    setState(() {
+      _transactionList.removeWhere((tx) => tx.id == id);
+    });
+  }
+
   void startAddNewTransaction(BuildContext ctx) {
     showModalBottomSheet(
         context: ctx,
@@ -74,7 +82,7 @@ class _HomeScreenState extends State<HomeScreen> {
           return TransactionInput(
             onSubmit: (tx) {
               setState(() {
-                transactionList.add(tx);
+                _transactionList.add(tx);
               });
             },
           );
